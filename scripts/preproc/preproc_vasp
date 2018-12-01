@@ -1,0 +1,46 @@
+#!/bin/bash
+DATA_DIR=$1
+WORK_DIR=$2
+TMP=tmp
+TMP2=tmp3
+max=0
+ISOTROPY="./run_isotropy"
+function parseOSZICAR {
+	local filename=$1
+	local dirn="$(dirname $filename)"
+	E0="$(bzcat $filename | tail -n 3 | grep E0= |  awk -F " " '{print $5}')"
+	echo $dirn
+	find $dirn -name 'XDATCAR.relax-final.bz2' | while read file; 
+		do 
+			bzcat $file > $TMP
+			$ISOTROPY $TMP > $TMP2 2> /dev/null
+			local SYM_INFO="$(head -n 1 $TMP2 | awk -F " " '{print $1}')"
+			if ! grep -q -x -F -e " $E0" <"$TMP2"; then
+   			 ed -s "$TMP2" < <(printf '%s\n' 1 a " $E0" . 1,2j w q) > /dev/null
+			fi
+			head -n 1 $TMP2
+			local line="$(sed -n '7p' < $TMP2)"
+			local sum=0
+  			for num in $line
+  			do
+    				sum=$(($sum + $num))
+  			done
+  			echo "$line Sum: $sum"
+			if [ "$sum" -gt "$max" ];
+			then
+				max=$sum
+			fi
+			bzip2 $TMP2
+			mv $TMP2'.bz2' $WORK_DIR/$SYM_INFO'.bz2'
+		done
+	
+}
+
+find $DATA_DIR -name 'OSZICAR.relax-final.bz2' | 
+	while read file; 
+		do parseOSZICAR "$file";
+	done
+compounds="$(ls -l $WORK_DIR | grep -v ^l | wc -l)"
+echo $compounds >> $WORK_DIR'/info'
+echo $max >> $WORK_DIR'/info'
+rm -f $TMP $TMP2

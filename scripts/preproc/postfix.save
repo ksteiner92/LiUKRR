@@ -1,0 +1,14 @@
+#!/bin/bash
+DIR=$1
+cd "$1"
+for i in {1..230}; do
+	#mkdir -p $i
+	#echo $i
+	#find . -name '$i:*' | while read file; do
+	for name in "$i:*"; do
+		#echo $file
+		if [ ! -d "$file" ]; then
+			 echo  mv "$name " "$i"
+		fi
+	done
+done

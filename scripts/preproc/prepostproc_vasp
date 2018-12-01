@@ -1,0 +1,22 @@
+#!/bin/bash
+WORK_DIR=$1
+TMP=tmp3
+max=0
+find $WORK_DIR -name '*.bz2' | while read file; 
+	do
+		bzcat $file > $TMP
+		echo $file
+		line="$(sed -n '7p' < $TMP)"
+		sum=0
+  		for num in $line
+  		do
+    			sum=$(($sum + $num))
+			#echo $num
+  		done
+  		echo "$line Sum: $sum"
+		if [ "$sum" -gt "$max" ];
+		then
+			max=$sum
+		fi
+		echo $max
+	done

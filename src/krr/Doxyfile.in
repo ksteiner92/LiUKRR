@@ -1,0 +1,24 @@
+PROJECT_NAME           = "@CMAKE_PROJECT_NAME@"
+PROJECT_NUMBER         = @VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@
+STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@ \
+                         @PROJECT_BINARY_DIR@
+INPUT                  = @doxy_main_page@ \
+                         @PROJECT_SOURCE_DIR@ \
+                         @PROJECT_BINARY_DIR@
+FILE_PATTERNS          = *.h \
+                         *.cc
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = @doxy_main_page@
+EXTRACT_ALL          = YES
+CLASS _DIAGRAMS      = YES
+HIDE_UNDOC_RELATIONS = NO
+HAVE_DOT             = YES
+CLASS_GRAPH          = YES
+COLLABORATION_GRAPH  = YES
+UML_LOOK             = YES
+UML_LIMIT_NUM_FIELDS = 50
+TEMPLATE_RELATIONS   = YES
+DOT_GRAPH_MAX_NODES  = 100
+MAX_DOT_GRAPH_DEPTH  = 0
+DOT_TRANSPARENT      = YES
+DOT_PATH = "@DOXYGEN_DOT_PATH@"

@@ -1,0 +1,92 @@
+#!/bin/bash
+
+export PYTHONPATH=/opt/runexample-files/isotropy/:$PYTHONPATH
+
+FIRSTLINE=$(head -n 1 "$1")
+
+MYTEMP=$(mktemp)
+MYTEMP2=$(mktemp)
+/opt/runexample-files/isotropy/Programs/isotropy_extract_info.py "$@" > "$MYTEMP"
+
+if [ "$?" != "0" ]; then
+    exit 1
+fi
+
+/opt/cif2cell/cif2cell-1.0.12/cif2cell -p vasp --vasp-format=5 "$MYTEMP" -o "$MYTEMP2"
+
+if [ "$?" != "0" ]; then
+    exit 1
+fi
+
+GROUP=$(sed -n 's/^_symmetry_Int_Tables_number \([^ ]\+\)$/\1/p' "$MYTEMP")
+HALL=$(sed -n "s/^_symmetry_space_group_name_Hall '\([^']\+\)'$/\1/p" "$MYTEMP" | tr " " _)
+SYMBOLS=$(awk '
+on==1 && /^[A-Z]/ {atoms[$4 " " $2]+=1}
+/_atom_site_occupancy/ {on=1}
+
+END {
+n = asorti(atoms,sn)
+for(i=1;i<=n;i++){
+  split(sn[i],a," ")
+  symbols[atoms[sn[i]] a[1] a[2]] += 1
+}
+
+n = asorti(symbols,sn)
+for(i=1;i<=n;i++){
+  #if(i>1) { printf("_") }
+  printf("%s",sn[i])
+}
+}
+
+' "$MYTEMP")
+
+    PROTOTYPE=$(awk '
+BEGIN {
+    split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", bigletters, "")
+    split("abcdefghijklmnopqrstuvwxyz", smallletters, "")
+}
+
+function getchr(count) {
+  if(count <= 26) {
+    return bigletters[count]
+  } 
+  high=int((count-1)/26)
+  low=(count - 1)%26 + 1
+  return bigletters[high] smallletters[low] " " high " " low
+}
+
+on==1 && /^[A-Z]/ {atoms[$4 " " $2]+=1}
+/_atom_site_occupancy/ {on=1}
+
+END {
+n = asorti(atoms,sn)
+chr = 0
+split("",seen)
+for(i=1;i<=n;i++){
+  split(sn[i],a," ")
+  symbols[atoms[sn[i]] " " a[1] " " a[2]] += 1
+}
+n = asorti(symbols,sn)
+for(i=1;i<=n;i++){
+  split(sn[i],a," ")
+  if(!(a[3] in seen)) {
+    chr+=1
+    seen[a[3]] = getchr(chr)
+  }
+  printf("%s%s%s",a[1],a[2],seen[a[3]])
+}
+}
+
+' "$MYTEMP")
+
+echo "$GROUP:$SYMBOLS $GROUP:$PROTOTYPE [$HALL] $FIRSTLINE"
+
+tail -n +2 "$MYTEMP2"
+
+#cat "$MYTEMP"
+
+rm -f "$MYTEMP" 
+rm -f "$MYTEMP2" 
+
+
+
